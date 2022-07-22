@@ -37,14 +37,14 @@ def stringhash(str, aeskey):
     h32 = [0, 0, 0, 0]
     for i in range(len(s32)):
         h32[i % 4] ^= s32[i]
-    for r in range(0x4000):
+    for _ in range(0x4000):
         h32 = aes_cbc_encrypt_a32(h32, aeskey)
     return a32_to_base64((h32[0], h32[2]))
 
 
 def prepare_key(arr):
     pkey = [0x93C467E3, 0x7DB0C7A4, 0xD1BE3F81, 0x0152CB56]
-    for r in range(0x10000):
+    for _ in range(0x10000):
         for j in range(0, len(arr), 4):
             key = [0, 0, 0, 0]
             for i in range(4):
@@ -65,7 +65,7 @@ def decrypt_key(a, key):
 
 
 def encrypt_attr(attr, key):
-    attr = makebyte('MEGA' + json.dumps(attr))
+    attr = makebyte(f'MEGA{json.dumps(attr)}')
     if len(attr) % 16:
         attr += b'\0' * (16 - len(attr) % 16)
     return aes_cbc_encrypt(attr, a32_to_str(key))
