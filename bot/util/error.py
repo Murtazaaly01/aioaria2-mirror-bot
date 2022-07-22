@@ -19,6 +19,6 @@ def format_exception(exp: BaseException,
     stack = "".join(traceback.format_list(tb))
     msg = str(exp)
     if msg:
-        msg = ": " + msg
+        msg = f": {msg}"
 
     return f"Traceback (most recent call last):\n{stack}{type(exp).__name__}{msg}"

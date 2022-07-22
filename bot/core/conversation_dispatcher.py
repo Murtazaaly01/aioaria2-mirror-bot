@@ -36,7 +36,7 @@ class ConversationDispatcher(BotMixinBase):
         max_messages: int = 7
     ) -> AsyncGenerator[Conversation, None]:
         conv = await Conversation.new(self, chat_id, timeout, max_messages)
-        chat_name = conv.chat.title if conv.chat.title else conv.chat.first_name
+        chat_name = conv.chat.title or conv.chat.first_name
         if conv.chat.id in self.CONVERSATION:
             raise ConversationExistError(f"Conversation with '{chat_name}' exist")
 

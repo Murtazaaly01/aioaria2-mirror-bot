@@ -47,10 +47,7 @@ def format_duration_us(t_us: Union[int, float]) -> str:
     if t_s >= 1:
         return "%d sec" % t_s
 
-    if t_ms >= 1:
-        return "%d ms" % t_ms
-
-    return "%d μs" % t_us
+    return "%d ms" % t_ms if t_ms >= 1 else "%d μs" % t_us
 
 
 def format_duration_td(value: timedelta, precision: int = 0) -> str:
@@ -74,7 +71,4 @@ def format_duration_td(value: timedelta, precision: int = 0) -> str:
     if seconds > 0 or not pieces:
         pieces.append(f"{seconds}s")
 
-    if precision == 0:
-        return "".join(pieces)
-
-    return "".join(pieces[:precision])
+    return "".join(pieces) if precision == 0 else "".join(pieces[:precision])

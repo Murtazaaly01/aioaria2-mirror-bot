@@ -106,31 +106,32 @@ class GoogleDrive(plugin.Plugin):
         self.getDirectLink = util.aria2.DirectLinks(self.bot.http)
 
     async def check_credentials(self, ctx: command.Context) -> None:
-        if not self.credentials or not self.credentials.valid:
-            if self.credentials and self.credentials.expired and (
-                    self.credentials.refresh_token):
-                self.log.info("Refreshing credentials")
-                await util.run_sync(self.credentials.refresh, Request())
+        if self.credentials and self.credentials.valid:
+            return
+        if self.credentials and self.credentials.expired and (
+                self.credentials.refresh_token):
+            self.log.info("Refreshing credentials")
+            await util.run_sync(self.credentials.refresh, Request())
 
-                await self.db.update_one(
-                    {"_id": 1},
-                    {"$set": {
-                        "credentials": json.loads(self.credentials.to_json())
-                    }})
-            else:
-                user = ctx.msg.from_user
-                if user.id != self.bot.owner:
-                    await ctx.respond("Please, ask the owner to generate the credentials.")
-                    return
+            await self.db.update_one(
+                {"_id": 1},
+                {"$set": {
+                    "credentials": json.loads(self.credentials.to_json())
+                }})
+        else:
+            user = ctx.msg.from_user
+            if user.id != self.bot.owner:
+                await ctx.respond("Please, ask the owner to generate the credentials.")
+                return
 
-                await asyncio.gather(
-                    ctx.respond("Credentials is empty, generating..."),
-                    asyncio.sleep(2.5))
-                ret = await self.getAccessToken(ctx)
+            await asyncio.gather(
+                ctx.respond("Credentials is empty, generating..."),
+                asyncio.sleep(2.5))
+            ret = await self.getAccessToken(ctx)
 
-                await ctx.respond(ret)
+            await ctx.respond(ret)
 
-            await self.on_load()
+        await self.on_load()
 
     @command.desc("Check your GoogleDrive credentials")
     @command.alias("gdauth")
@@ -197,7 +198,7 @@ class GoogleDrive(plugin.Plugin):
         metadata = {}
         if parent_id is not None:
             metadata["parents"] = [parent_id]
-        elif parent_id is None and self.parent_id is not None:
+        elif self.parent_id is not None:
             metadata["parents"] = [self.parent_id]
 
         file = await util.run_sync(self.service.files().copy(  # type: ignore
@@ -240,7 +241,7 @@ class GoogleDrive(plugin.Plugin):
         }
         if folderId is not None:
             folder_metadata["parents"] = [folderId]
-        elif folderId is None and self.parent_id is not None:
+        elif self.parent_id is not None:
             folder_metadata["parents"] = [self.parent_id]
 
         folder = await util.run_sync(self.service.files().create(  # type: ignore
@@ -281,7 +282,7 @@ class GoogleDrive(plugin.Plugin):
         body: MutableMapping[str, Any] = {"name": file.name, "mimeType": file.mime_type}
         if parent_id is not None:
             body["parents"] = [parent_id]
-        elif parent_id is None and self.parent_id is not None:
+        elif self.parent_id is not None:
             body["parents"] = [self.parent_id]
 
         if (await file.path.stat()).st_size > 0:
@@ -429,10 +430,10 @@ class GoogleDrive(plugin.Plugin):
     async def cmd_gdcopy(self, ctx: command.Context) -> Optional[str]:
         if not ctx.input and not ctx.msg.reply_to_message:
             return "__Input the id of the file/folder or reply to abort copy task__"
-        if ctx.msg.reply_to_message and ctx.input != "abort":
-            return "__Replying to message only for aborting task__"
-
         if ctx.msg.reply_to_message:
+            if ctx.input != "abort":
+                return "__Replying to message only for aborting task__"
+
             reply_msg_id = ctx.msg.reply_to_message.message_id
             for msg_id, identifier in self.copy_tasks.copy():
                 if msg_id == reply_msg_id:
@@ -568,8 +569,7 @@ class GoogleDrive(plugin.Plugin):
             types = ctx.input
 
         if isinstance(types, str):
-            match = DOMAIN.match(types)
-            if match:
+            if match := DOMAIN.match(types):
                 direct = await self.getDirectLink(match.group(1), types)
                 if direct is not None and isinstance(direct, list):
                     if len(direct) == 1:
@@ -661,13 +661,13 @@ class GoogleDrive(plugin.Plugin):
             query = f"'{parent}' in parents and (name contains '{name}')"
         elif parent is not None and name is None and filters is not None:
             query = f"'{parent}' in parents and ({filters})"
-        elif parent is not None and name is None and filters is None:
+        elif parent is not None and name is None:
             query = f"'{parent}' in parents"
         elif parent is None and name is not None and filters is not None:
             query = f"name contains '{name}' and {filters}"
-        elif parent is None and name is not None and filters is None:
+        elif parent is None and name is not None:
             query = f"name contains '{name}'"
-        elif parent is None and name is None and filters is not None:
+        elif parent is None and filters is not None:
             query = filters
         else:
             query = ""

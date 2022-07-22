@@ -66,15 +66,14 @@ class TelegramBot(BotMixinBase):
         if not api_hash:
             raise RuntimeError("API_HASH environment variable not set")
 
-        bot_token = self.config["bot_token"]
-        if not bot_token:
+        if bot_token := self.config["bot_token"]:
+            # Initialize Telegram client with gathered parameters
+            self.client = Client(
+                session_name=":memory:", api_id=api_id, api_hash=api_hash,
+                bot_token=bot_token
+            )
+        else:
             raise RuntimeError("BOT_TOKEN environment variable not set")
-
-        # Initialize Telegram client with gathered parameters
-        self.client = Client(
-            session_name=":memory:", api_id=api_id, api_hash=api_hash,
-            bot_token=bot_token
-        )
 
     async def start(self: "Bot") -> None:
         self.log.info("Starting")

@@ -35,13 +35,12 @@ class TelegramConfig(MutableMapping[_KT, _VT]):
 
                 if value == "":
                     value = None
-            else:
-                if key == "download_path":
-                    value = AsyncPath(value)
-                elif key == "gdrive_index_link":
-                    value = value.rstrip("/")
-                elif key == "gdrive_secret":
-                    value = json.loads(value)
+            elif key == "download_path":
+                value = AsyncPath(value)
+            elif key == "gdrive_index_link":
+                value = value.rstrip("/")
+            elif key == "gdrive_secret":
+                value = json.loads(value)
 
             super().__setattr__(key, value)
             self.__data[key] = value

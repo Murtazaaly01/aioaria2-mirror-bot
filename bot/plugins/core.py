@@ -29,10 +29,11 @@ class Core(plugin.Plugin):
 
     def build_button(self) -> List[List[InlineKeyboardButton]]:
         plugins = list(self.bot.plugins.keys())
-        button: List[InlineKeyboardButton] = []
-        for plug in plugins:
-            button.append(InlineKeyboardButton(
-                plug, callback_data=f"menu({plug})".encode()))
+        button: List[InlineKeyboardButton] = [
+            InlineKeyboardButton(plug, callback_data=f"menu({plug})".encode())
+            for plug in plugins
+        ]
+
         buttons = [
             button[i * 3:(i + 1) * 3]
             for i in range((len(button) + 3 - 1) // 3)
@@ -83,7 +84,7 @@ class Core(plugin.Plugin):
             await query.answer("Sorry, i couldn't get your id. Access denied.",
                                show_alert=True)
             return
-        if user and user.id != self.bot.owner and user.id not in self.bot.sudo_users:
+        if user.id != self.bot.owner and user.id not in self.bot.sudo_users:
             await query.answer("Access denied.", show_alert=True)
             return
 
@@ -103,7 +104,7 @@ class Core(plugin.Plugin):
             if cmd.plugin.name != mod:
                 continue
 
-            desc = cmd.desc if cmd.desc else "__No description provided__"
+            desc = cmd.desc or "__No description provided__"
             aliases = ""
             if cmd.aliases:
                 aliases = f' (aliases: {", ".join(cmd.aliases)})'
@@ -197,23 +198,19 @@ class Core(plugin.Plugin):
                     if cmd.usage_optional:
                         args_desc += " (optional)"
 
-                return f"""`{cmd.name}`: **{cmd.desc if cmd.desc else '__No description provided.__'}**
+                return f"""`{cmd.name}`: **{cmd.desc or '__No description provided.__'}**
 
 Module: {cmd.plugin.name}
 Aliases: {aliases}
 Expected parameters: {args_desc}"""
 
+
             return "__That filter didn't match any commands or plugins.__"
 
         for name, cmd in self.bot.commands.items():
-            if filt:
-                if cmd.plugin.name != filt:
-                    continue
-            else:
-                if name != cmd.name:
-                    continue
-
-            desc = cmd.desc if cmd.desc else "__No description provided__"
+            if filt and cmd.plugin.name != filt or not filt and name != cmd.name:
+                continue
+            desc = cmd.desc or "__No description provided__"
             aliases = ""
             if cmd.aliases:
                 aliases = f' (aliases: {", ".join(cmd.aliases)})'

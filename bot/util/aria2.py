@@ -305,7 +305,7 @@ class DirectLinks:
         if not regex:
             return []
 
-        fid = regex.group(1)
+        fid = regex[1]
         uri = "https://androidfilehost.com/libs/otf/mirrors.otf.php"
         async with self.http.get(url, headers={"user-agent": self.useragent},
                                  allow_redirects=True) as r:
@@ -340,7 +340,7 @@ class DirectLinks:
         if not www:
             return
 
-        www = www.group(1)
+        www = www[1]
         async with self.http.get(url) as resp:
             page = BeautifulSoup(await resp.text(), "lxml")
             try:
@@ -361,7 +361,7 @@ class DirectLinks:
                     if not math:
                         continue
 
-                    url_raw, math = url_raw.group("url"), math.group("math")
+                    url_raw, math = url_raw["url"], math["math"]
                     numbers = []
                     expression = []
                     for e in math.strip("()").split():
@@ -372,17 +372,16 @@ class DirectLinks:
 
                     try:
                         result = None
-                        if expression[0] == "%" and expression[2] == "%":
-                            first_result = numbers[0] % numbers[1]
-                            second_result = numbers[2] % numbers[3]
-                            if expression[1] == "+":
-                                result = str(first_result + second_result)
-                            elif expression[1] == "-":
-                                result = str(first_result - second_result)
-                            else:
-                                raise ValueError("Unexpected value to calculate")
-                        else:
+                        if expression[0] != "%" or expression[2] != "%":
                             raise ValueError("Unexpected results of expression")
+                        first_result = numbers[0] % numbers[1]
+                        second_result = numbers[2] % numbers[3]
+                        if expression[1] == "+":
+                            result = str(first_result + second_result)
+                        elif expression[1] == "-":
+                            result = str(first_result - second_result)
+                        else:
+                            raise ValueError("Unexpected value to calculate")
                     except IndexError:
                         raise ValueError("Unexpected results of array")
                     else:
